@@ -86,11 +86,20 @@ const auth = {
     return { ...profile, email: user.email };
   },
  
-  login: async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  login: async (emailOrObj, password) => {
+    const email = typeof emailOrObj === 'object' ? emailOrObj.email : emailOrObj;
+    const pass = typeof emailOrObj === 'object' ? emailOrObj.password : password;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) throw error;
     return data;
   },
+
+  loginViaEmailPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
+  signInWithPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
+
+  // Aliases in case your pages call it by a different name than `login`.
+  loginViaEmailPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
+  signInWithPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
  
   // Register.jsx calls: base44.auth.register({ email, password })
   // A database trigger (see schema) auto-creates the matching profiles row —
