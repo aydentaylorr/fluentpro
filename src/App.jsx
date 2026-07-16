@@ -21,6 +21,8 @@ import Feedback from '@/pages/Feedback';
 import Vocabulary from '@/pages/Vocabulary';
 import Progress from '@/pages/Progress';
 import DailyChallenge from '@/pages/DailyChallenge';
+import Grammar from '@/pages/Grammar';
+import Pricing from '@/pages/Pricing';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -63,6 +65,8 @@ const AuthenticatedApp = () => {
           <Route path="/practice" element={<Practice />} />
           <Route path="/vocabulary" element={<Vocabulary />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/grammar" element={<Grammar />} />
+          <Route path="/pricing" element={<Pricing />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
