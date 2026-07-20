@@ -5,7 +5,6 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
  
 export const supabase = createClient(supabaseUrl, supabasePublishableKey);
  
-// Map your Base44 entity names to the Postgres table names from the schema.
 const ENTITY_TABLE = {
   VocabularyPhrase: 'vocabulary_phrases',
   PracticeSession: 'practice_sessions',
@@ -17,33 +16,47 @@ function handle({ data, error }) {
   return data;
 }
  
+async function getCurrentUserId() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  return user.id;
+}
+ 
+function applySort(query, sort) {
+  if (!sort) return query;
+  const desc = sort.startsWith('-');
+  const column = desc ? sort.slice(1) : sort;
+  return query.order(column, { ascending: !desc });
+}
+ 
 function makeEntity(table) {
   return {
-    list: async (sort) => {
+    list: async (sort, limit) => {
       let query = supabase.from(table).select('*');
-      if (sort) {
-        const desc = sort.startsWith('-');
-        const column = desc ? sort.slice(1) : sort;
-        query = query.order(column, { ascending: !desc });
-      }
+      query = applySort(query, sort);
+      if (limit) query = query.limit(limit);
       return handle(await query);
     },
-    filter: async (whereObj = {}, sort) => {
+    filter: async (whereObj = {}, sort, limit) => {
       let query = supabase.from(table).select('*');
       for (const [key, value] of Object.entries(whereObj)) {
         query = query.eq(key, value);
       }
-      if (sort) {
-        const desc = sort.startsWith('-');
-        const column = desc ? sort.slice(1) : sort;
-        query = query.order(column, { ascending: !desc });
-      }
+      query = applySort(query, sort);
+      if (limit) query = query.limit(limit);
       return handle(await query);
     },
     get: async (id) =>
       handle(await supabase.from(table).select('*').eq('id', id).single()),
-    create: async (fields) =>
-      handle(await supabase.from(table).insert(fields).select().single()),
+    create: async (fields) => {
+      const user_id = await getCurrentUserId();
+      return handle(await supabase.from(table).insert({ ...fields, user_id }).select().single());
+    },
+    bulkCreate: async (rows) => {
+      const user_id = await getCurrentUserId();
+      const withUser = rows.map((r) => ({ ...r, user_id }));
+      return handle(await supabase.from(table).insert(withUser).select());
+    },
     update: async (id, fields) =>
       handle(await supabase.from(table).update(fields).eq('id', id).select().single()),
     delete: async (id) =>
@@ -66,10 +79,7 @@ const entities = new Proxy(
   }
 );
  
-// Auth shim shaped to match exactly what Register.jsx, Onboarding.jsx,
-// AuthContext.jsx etc. already call — so those files don't need edits.
 const auth = {
-  // Returns the logged-in user's profile row, or throws a 401 if signed out.
   me: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -93,26 +103,16 @@ const auth = {
     if (error) throw error;
     return data;
   },
-
-  loginViaEmailPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
-  signInWithPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
-
-  // Aliases in case your pages call it by a different name than `login`.
+ 
   loginViaEmailPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
   signInWithPassword: async (emailOrObj, password) => auth.login(emailOrObj, password),
  
-  // Register.jsx calls: base44.auth.register({ email, password })
-  // A database trigger (see schema) auto-creates the matching profiles row —
-  // no manual insert needed here.
   register: async ({ email, password }) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     return data;
   },
  
-  // Register.jsx calls: base44.auth.verifyOtp({ email, otpCode })
-  // Supabase's default "Confirm signup" email includes a 6-digit {{ .Token }}
-  // alongside the magic link, so this works out of the box.
   verifyOtp: async ({ email, otpCode }) => {
     const { data, error } = await supabase.auth.verifyOtp({
       email,
@@ -120,7 +120,6 @@ const auth = {
       type: 'signup',
     });
     if (error) throw error;
-    // Register.jsx checks result?.access_token
     return { ...data, access_token: data.session?.access_token };
   },
  
@@ -129,12 +128,8 @@ const auth = {
     if (error) throw error;
   },
  
-  // No-op: Supabase's client already persists the session itself
-  // (verifyOtp above already signs the user in). Kept so Register.jsx's
-  // call to base44.auth.setToken(...) doesn't throw.
   setToken: () => {},
  
-  // Register.jsx calls: base44.auth.loginWithProvider("google", "/")
   loginWithProvider: async (provider, redirectPath = '/') => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -144,7 +139,6 @@ const auth = {
     return data;
   },
  
-  // Onboarding.jsx calls: base44.auth.updateMe({ goal, english_level, industry, accent, onboarded: true })
   updateMe: async (fields) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -181,7 +175,27 @@ const auth = {
   },
 };
  
+// Bridges base44.integrations.Core.InvokeLLM(...) calls to our own
+// serverless endpoint at /api/invoke-llm, which talks to OpenAI securely.
+const integrations = {
+  Core: {
+    InvokeLLM: async ({ prompt, response_json_schema }) => {
+      const res = await fetch('/api/invoke-llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, response_json_schema }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'AI request failed');
+      }
+      return res.json();
+    },
+  },
+};
+ 
 export const base44 = {
   entities,
   auth,
+  integrations,
 };

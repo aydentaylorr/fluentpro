@@ -21,15 +21,15 @@ export default function AdminMetrics() {
         { data: payments },
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', since7d),
-        supabase.from('practice_sessions').select('*', { count: 'exact', head: true }).gte('started_at', since7d),
-        supabase.from('user_saved_phrases').select('*', { count: 'exact', head: true }).eq('saved', true),
-        supabase.from('payments').select('amount, created_at').eq('status', 'COMPLETED'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_date', since7d),
+        supabase.from('practice_sessions').select('*', { count: 'exact', head: true }).gte('created_date', since7d),
+        supabase.from('vocabulary_phrases').select('*', { count: 'exact', head: true }).eq('saved', true),
+        supabase.from('payments').select('amount, created_date').eq('status', 'COMPLETED'),
       ]);
 
       const totalRevenue = (payments || []).reduce((sum, p) => sum + Number(p.amount), 0);
       const revenue7d = (payments || [])
-        .filter((p) => p.created_at >= since7d)
+        .filter((p) => p.created_date >= since7d)
         .reduce((sum, p) => sum + Number(p.amount), 0);
 
       setMetrics({
