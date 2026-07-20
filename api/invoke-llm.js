@@ -1,9 +1,8 @@
 // api/invoke-llm.js
 //
-// A Vercel serverless function — this runs on OpenAI's servers-adjacent
-// backend (Vercel), NOT in the browser, so your OPENAI_API_KEY stays secret.
-// Your React app calls this via fetch('/api/invoke-llm', ...) instead of
-// calling OpenAI directly.
+// A Vercel serverless function using Google's Gemini API, which has a
+// genuine free tier (no credit card required). Runs server-side only,
+// so your GEMINI_API_KEY never reaches the browser.
  
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,62 +15,49 @@ export default async function handler(req, res) {
   }
  
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'OPENAI_API_KEY is not set on the server' });
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not set on the server' });
     }
  
     // NOTE: double check this model name is still current at
-    // platform.openai.com/docs/models before relying on it in production.
-    const body = {
-      model: 'gpt-5-mini',
-      messages: [{ role: 'user', content: prompt }],
-    };
+    // aistudio.google.com before relying on it in production.
+    const model = 'gemini-2.5-flash';
  
-    // If the caller wants structured JSON back (e.g. scores, exercises),
-    // force OpenAI to return valid JSON matching the requested shape.
+    const generationConfig = {};
     if (response_json_schema) {
-      const properties = response_json_schema.properties || {};
-      body.response_format = {
-        type: 'json_schema',
-        json_schema: {
-          name: 'response',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties,
-            required: Object.keys(properties),
-            additionalProperties: false,
-          },
-        },
-      };
+      generationConfig.responseMimeType = 'application/json';
+      generationConfig.responseSchema = response_json_schema;
     }
  
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          ...(response_json_schema ? { generationConfig } : {}),
+        }),
+      }
+    );
  
-    const data = await openaiRes.json();
+    const data = await geminiRes.json();
  
-    if (!openaiRes.ok) {
-      return res.status(openaiRes.status).json({ error: data?.error?.message || 'OpenAI API error' });
+    if (!geminiRes.ok) {
+      return res.status(geminiRes.status).json({ error: data?.error?.message || 'Gemini API error' });
     }
  
-    const content = data.choices?.[0]?.message?.content ?? '';
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
  
     if (response_json_schema) {
-      // content is a JSON string when response_format is set — parse it
-      // so the frontend gets a real object back, matching what
+      // text is a JSON string when responseSchema is set — parse it so
+      // the frontend gets a real object back, matching what
       // base44.integrations.Core.InvokeLLM used to return.
-      return res.status(200).json(JSON.parse(content));
+      return res.status(200).json(JSON.parse(text));
     }
  
-    return res.status(200).json(content);
+    return res.status(200).json(text);
   } catch (err) {
     console.error('invoke-llm error:', err);
     return res.status(500).json({ error: err.message || 'Unknown server error' });
