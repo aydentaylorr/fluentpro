@@ -54,8 +54,9 @@ ${convo ? "Conversation so far:\n" + convo : "Start the conversation with a warm
 
   const handleMic = async () => {
     if (listening) {
-      stopListening();
-      const text = transcript.trim();
+      // Wait for the final transcript instead of reading stale state —
+      // matches the pattern used in DailyChallenge.jsx and Grammar.jsx.
+      const text = (await stopListening())?.trim();
       if (!text) return;
       const withUser = [...messages, { role: "user", text }];
       setMessages(withUser);
