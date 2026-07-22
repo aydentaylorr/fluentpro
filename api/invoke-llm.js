@@ -20,9 +20,10 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not set on the server' });
     }
  
-    // NOTE: double check this model name is still current at
-    // aistudio.google.com before relying on it in production.
-    const model = 'gemini-2.5-flash';
+    // Using the '-latest' alias so this automatically follows whichever
+    // model Google currently recommends, instead of breaking again next
+    // time they retire a specific version.
+    const model = 'gemini-flash-latest';
  
     const generationConfig = {};
     if (response_json_schema) {
