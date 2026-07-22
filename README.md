@@ -1,77 +1,135 @@
-# Base44 Project
+# FluentPro AI
 
-Use this repository to run and edit the app locally, then publish changes back through Base44.
+FluentPro AI is an AI-powered English learning platform designed to help learners improve their confidence and communication skills through natural conversation.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+Unlike traditional language learning apps that focus primarily on grammar exercises, FluentPro AI provides a more interactive experience by allowing users to speak, write, and receive personalised feedback in real time. The goal is to help learners become confident English speakers for everyday conversations, work, interviews, presentations, and professional communication.
 
-## Prerequisites
+## Features
 
-1. Clone the repository using the project's Git URL.
-2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
-4. Install the Base44 CLI: `npm install -g base44@latest`.
+* AI-powered English conversations
+* Real-time grammar and vocabulary feedback
+* Pronunciation and fluency guidance
+* Business English practice
+* Interview preparation
+* Speaking confidence exercises
+* Personalised learning experience
+* Progress tracking and performance insights
 
-See the [Base44 CLI docs](https://docs.base44.com/developers/references/cli/get-started/overview) if you want to run Base44 commands directly.
+## Who It's For
 
-## Run Locally
+FluentPro AI is designed for:
 
-Run the full local development environment from the project root:
+* Professionals who use English at work
+* Students preparing for exams or studying abroad
+* Job seekers preparing for interviews
+* English learners who want to improve their speaking confidence
+* Anyone looking to communicate more naturally in English
+
+## Technology Stack
+
+The application is built using modern web technologies, including:
+
+* React
+* Vite
+* JavaScript
+* AI-powered language models
+* REST APIs
+* HTML5 & CSS3
+
+Additional technologies and services may be integrated as the platform continues to evolve.
+
+## Getting Started
+
+### Prerequisites
+
+Before running the project, ensure you have:
+
+* Node.js (latest LTS version recommended)
+* npm
+
+### Installation
+
+Clone the repository:
 
 ```bash
-base44 dev
+git clone <repository-url>
 ```
 
-`base44 dev` starts the local Base44 development backend and, when this app is configured for it, also starts the frontend dev server for you. Use the frontend URL printed by the command.
+Navigate into the project folder:
 
-For example, when the Base44 project config includes a `serveCommand`, `base44 dev` can launch the frontend too:
-
-```json5
-{
-  "site": {
-    "serveCommand": "npm run dev"
-  }
-}
+```bash
+cd fluentpro-ai
 ```
 
-In a Base44 project this lives in `base44/config.jsonc`.
+Install dependencies:
 
-## Run Only The Frontend
+```bash
+npm install
+```
 
-If you only want to work on the frontend against the hosted Base44 backend, run:
+## Running the Project
+
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite.
+Once running, open the local URL displayed in your terminal (typically `http://localhost:5173`) to access the application.
 
-## Use The Hosted Backend
+## Environment Variables
 
-For frontend-only development, create or update `.env.local` in the project root:
+Create a `.env.local` file in the root directory if required.
 
-```bash
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=https://your-app.base44.app
+Example:
+
+```env
+VITE_API_URL=your_api_url
+VITE_APP_NAME=FluentPro AI
 ```
 
-`VITE_BASE44_APP_ID` identifies the Base44 app.
+Update these values according to your development environment.
 
-`VITE_BASE44_APP_BASE_URL` tells the Base44 Vite plugin where to send local `/api` requests. Point it at your deployed Base44 app URL when you want the local frontend to use the hosted backend.
+## Building for Production
 
-When you use `base44 dev`, the command injects the local Base44 values for you, so `.env.local` is mainly needed for frontend-only workflows.
-
-## Publish Your Changes
-
-After pushing your changes to git, open the Base44 dashboard and publish the app:
+Generate an optimized production build:
 
 ```bash
-base44 dashboard open
+npm run build
 ```
 
-## Docs & Support
+To preview the production build locally:
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+```bash
+npm run preview
+```
 
-Base44 CLI command reference: [https://docs.base44.com/developers/references/cli/commands/introduction](https://docs.base44.com/developers/references/cli/commands/introduction)
+## Project Vision
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+Learning a language should feel like having a conversation, not completing a worksheet.
+
+FluentPro AI was created to bridge the gap between knowing English and confidently using it. The platform combines artificial intelligence with practical language learning techniques to provide instant, personalised coaching that adapts to each learner's level, goals, and progress.
+
+Whether preparing for a meeting, interview, presentation, or everyday conversation, FluentPro AI aims to make English learning engaging, accessible, and confidence-building.
+
+## Future Development
+
+Planned features include:
+
+* Voice conversations with AI
+* Advanced pronunciation analysis
+* Custom learning paths
+* Daily speaking challenges
+* Vocabulary builder
+* Interactive role-play scenarios
+* Teacher dashboard
+* Progress reports and certificates
+* Mobile application support
+
+## Contributing
+
+Contributions, suggestions, and feedback are welcome. If you would like to improve FluentPro AI, please fork the repository, create a feature branch, and submit a pull request.
+
+## License
+
+This project is licensed under the applicable license chosen by the project owner.
